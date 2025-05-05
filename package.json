@@ -1,0 +1,11 @@
+{
+    "name": "blog-platform",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "user-service",
+        "post-service",
+        "comment-service",
+        "frontend"
+    ]
+}

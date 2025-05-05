@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blog Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+        }
+        
+        nav {
+            margin-bottom: 20px;
+        }
+        
+        nav a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        section {
+            margin-bottom: 40px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .post {
+            background: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .post h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .post-meta {
+            color: #7f8c8d;
+            font-size: 0.8em;
+            margin-bottom: 10px;
+        }
+        
+        .comments {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .comment {
+            background: #fff;
+            border-left: 3px solid #3498db;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .comment-meta {
+            color: #7f8c8d;
+            font-size: 0.8em;
+        }
+        
+        form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        input, textarea, button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        .alert {
+            padding: 10px;
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Simple Blog Platform</h1>
+        <div id="userInfo" class="hidden">
+            Logged in as <span id="username"></span> 
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </header>
+    
+    <nav>
+        <a href="#" id="homeLink">Home</a>
+        <a href="#" id="loginLink">Login</a>
+        <a href="#" id="registerLink">Register</a>
+        <a href="#" id="newPostLink" class="hidden">New Post</a>
+    </nav>
+    
+    <!-- Home/Posts Section -->
+    <section id="postsSection" class="hidden">
+        <h2>Recent Posts</h2>
+        <div id="postsContainer"></div>
+    </section>
+    
+    <!-- Login Section -->
+    <section id="loginSection" class="hidden">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <div id="loginAlert" class="alert hidden"></div>
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </section>
+    
+    <!-- Register Section -->
+    <section id="registerSection" class="hidden">
+        <h2>Register</h2>
+        <form id="registerForm">
+            <div id="registerAlert" class="alert hidden"></div>
+            <input type="text" id="registerUsername" placeholder="Username" required>
+            <input type="email" id="registerEmail" placeholder="Email" required>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <button type="submit">Register</button>
+        </form>
+    </section>
+    
+    <!-- New Post Section -->
+    <section id="newPostSection" class="hidden">
+        <h2>Create New Post</h2>
+        <form id="newPostForm">
+            <div id="postAlert" class="alert hidden"></div>
+            <input type="text" id="postTitle" placeholder="Title" required>
+            <textarea id="postContent" placeholder="Write your post here..." rows="6" required></textarea>
+            <button type="submit">Publish Post</button>
+        </form>
+    </section>
+    
+    <!-- Post Detail Section -->
+    <section id="postDetailSection" class="hidden">
+        <div id="postDetail"></div>
+        
+        <div id="commentsSection">
+            <h3>Comments</h3>
+            <div id="commentsContainer"></div>
+            
+            <form id="commentForm" class="hidden">
+                <textarea id="commentContent" placeholder="Write a comment..." rows="3" required></textarea>
+                <button type="submit">Add Comment</button>
+            </form>
+        </div>
+    </section>
+    
+    <script>
+        // Base URLs for the services
+        // const USER_SERVICE = 'http://localhost:8081';
+        // const POST_SERVICE = 'http://localhost:8082';
+        // const COMMENT_SERVICE = 'http://localhost:8083';
+
+        const HOST_NAME = '';
+        const USER_SERVICE = HOST_NAME + '/user-service';
+        const POST_SERVICE = HOST_NAME + '/post-service';
+        const COMMENT_SERVICE = HOST_NAME + '/comment-service';
+        
+        // State management
+        let currentUser = null;
+        let currentPostId = null;
+        
+        // DOM Elements
+        const sections = {
+            posts: document.getElementById('postsSection'),
+            login: document.getElementById('loginSection'),
+            register: document.getElementById('registerSection'),
+            newPost: document.getElementById('newPostSection'),
+            postDetail: document.getElementById('postDetailSection')
+        };
+        
+        // Show a specific section and hide others
+        function showSection(sectionId) {
+            Object.keys(sections).forEach(key => {
+                sections[key].classList.add('hidden');
+            });
+            sections[sectionId].classList.remove('hidden');
+        }
+        
+        // Update UI based on authentication status
+        function updateAuthUI() {
+            const userInfo = document.getElementById('userInfo');
+            const username = document.getElementById('username');
+            const loginLink = document.getElementById('loginLink');
+            const registerLink = document.getElementById('registerLink');
+            const newPostLink = document.getElementById('newPostLink');
+            const commentForm = document.getElementById('commentForm');
+            
+            if (currentUser) {
+                userInfo.classList.remove('hidden');
+                username.textContent = currentUser.username;
+                loginLink.classList.add('hidden');
+                registerLink.classList.add('hidden');
+                newPostLink.classList.remove('hidden');
+                if (commentForm) commentForm.classList.remove('hidden');
+            } else {
+                userInfo.classList.add('hidden');
+                loginLink.classList.remove('hidden');
+                registerLink.classList.remove('hidden');
+                newPostLink.classList.add('hidden');
+                if (commentForm) commentForm.classList.add('hidden');
+            }
+        }
+        
+        // Load all posts
+        async function loadPosts() {
+            try {
+                const response = await fetch(`${POST_SERVICE}/posts`);
+                const posts = await response.json();
+                
+                const container = document.getElementById('postsContainer');
+                container.innerHTML = '';
+                
+                if (posts.length === 0) {
+                    container.innerHTML = '<p>No posts yet!</p>';
+                    return;
+                }
+                
+                posts.forEach(post => {
+                    const postEl = document.createElement('div');
+                    postEl.className = 'post';
+                    postEl.innerHTML = `
+                        <h3>${post.title}</h3>
+                        <div class="post-meta">Posted on ${new Date(post.created_at).toLocaleDateString()}</div>
+                        <p>${post.content.substring(0, 150)}${post.content.length > 150 ? '...' : ''}</p>
+                        <a href="#" class="read-more" data-id="${post.id}">Read more</a>
+                    `;
+                    container.appendChild(postEl);
+                });
+                
+                // Add event listeners for "Read more" links
+                document.querySelectorAll('.read-more').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const postId = e.target.getAttribute('data-id');
+                        loadPostDetail(postId);
+                    });
+                });
+                
+                showSection('posts');
+            } catch (error) {
+                console.error('Error loading posts:', error);
+            }
+        }
+        
+        // Load a single post with comments
+        async function loadPostDetail(postId) {
+            try {
+                currentPostId = postId;
+                
+                // Fetch post
+                const postResponse = await fetch(`${POST_SERVICE}/posts/${postId}`);
+                const post = await postResponse.json();
+                
+                // Fetch comments
+                const commentsResponse = await fetch(`${COMMENT_SERVICE}/posts/${postId}/comments`);
+                const comments = await commentsResponse.json();
+                
+                // Display post
+                const postDetail = document.getElementById('postDetail');
+                postDetail.innerHTML = `
+                    <div class="post">
+                        <h2>${post.title}</h2>
+                        <div class="post-meta">Posted on ${new Date(post.created_at).toLocaleDateString()}</div>
+                        <div class="post-content">${post.content}</div>
+                    </div>
+                `;
+                
+                // Display comments
+                const commentsContainer = document.getElementById('commentsContainer');
+                commentsContainer.innerHTML = '';
+                
+                if (comments.length === 0) {
+                    commentsContainer.innerHTML = '<p>No comments yet!</p>';
+                } else {
+                    comments.forEach(comment => {
+                        const commentEl = document.createElement('div');
+                        commentEl.className = 'comment';
+                        commentEl.innerHTML = `
+                            <div class="comment-meta">User #${comment.user_id} on ${new Date(comment.created_at).toLocaleDateString()}</div>
+                            <div class="comment-content">${comment.content}</div>
+                        `;
+                        commentsContainer.appendChild(commentEl);
+                    });
+                }
+                
+                updateAuthUI();
+                showSection('postDetail');
+            } catch (error) {
+                console.error('Error loading post detail:', error);
+            }
+        }
+        
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const alertEl = document.getElementById('loginAlert');
+            
+            try {
+                const response = await fetch(`${USER_SERVICE}/users/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                currentUser = await response.json();
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                
+                updateAuthUI();
+                loadPosts();
+            } catch (error) {
+                alertEl.textContent = `Login failed: ${error.message}`;
+                alertEl.classList.remove('hidden');
+            }
+        });
+        
+        // Handle register form submission
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const alertEl = document.getElementById('registerAlert');
+            
+            try {
+                const response = await fetch(`${USER_SERVICE}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                currentUser = await response.json();
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                
+                alertEl.textContent = 'Registration successful! Redirecting to posts...';
+                alertEl.classList.remove('hidden');
+                alertEl.classList.add('success');
+                
+                updateAuthUI();
+                setTimeout(() => loadPosts(), 1500);
+            } catch (error) {
+                alertEl.textContent = `Registration failed: ${error.message}`;
+                alertEl.classList.remove('hidden');
+                alertEl.classList.remove('success');
+            }
+        });
+        
+        // Handle new post form submission
+        document.getElementById('newPostForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                showSection('login');
+                return;
+            }
+            
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const alertEl = document.getElementById('postAlert');
+            
+            try {
+                const response = await fetch(`${POST_SERVICE}/posts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        title, 
+                        content, 
+                        user_id: currentUser.id 
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                alertEl.textContent = 'Post published successfully! Redirecting...';
+                alertEl.classList.remove('hidden');
+                alertEl.classList.add('success');
+                
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+                
+                setTimeout(() => loadPosts(), 1500);
+            } catch (error) {
+                alertEl.textContent = `Failed to publish post: ${error.message}`;
+                alertEl.classList.remove('hidden');
+                alertEl.classList.remove('success');
+            }
+        });
+        
+        // Handle comment form submission
+        document.getElementById('commentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser || !currentPostId) return;
+            
+            const content = document.getElementById('commentContent').value;
+            
+            try {
+                const response = await fetch(`${COMMENT_SERVICE}/posts/${currentPostId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        content, 
+                        user_id: currentUser.id 
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                document.getElementById('commentContent').value = '';
+                loadPostDetail(currentPostId);
+            } catch (error) {
+                console.error('Failed to add comment:', error);
+            }
+        });
+        
+        // Navigation event listeners
+        document.getElementById('homeLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            loadPosts();
+        });
+        
+        document.getElementById('loginLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('login');
+        });
+        
+        document.getElementById('registerLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('register');
+        });
+        
+        document.getElementById('newPostLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            showSection('newPost');
+        });
+        
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            currentUser = null;
+            localStorage.removeItem('user');
+            updateAuthUI();
+            loadPosts();
+        });
+        
+        // Initialize the app
+        function init() {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateAuthUI();
+            }
+            loadPosts();
+        }
+        
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
