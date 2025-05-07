@@ -28,11 +28,11 @@ var db *sql.DB
 
 func main() {
 	// Set up database connection using environment variables
-	dbUser := getEnv("DB_USER", "")
-	dbPassword := getEnv("DB_PASSWORD", "")
-	dbHost := getEnv("DB_HOST", "")
-	dbPort := getEnv("DB_PORT", "")
-	dbName := getEnv("DB_NAME", "")
+	dbUser := getEnv("DB_USER", "postgres")
+	dbPassword := getEnv("DB_PASSWORD", "password")
+	dbHost := getEnv("DB_HOST", "blogdb.c38gs6wia8kt.us-east-1.rds.amazonaws.com")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbName := getEnv("DB_NAME", "blogdb")
 
 	connectionString := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=require",
 		dbUser, dbPassword, dbHost, dbPort, dbName)
