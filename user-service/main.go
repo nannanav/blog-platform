@@ -66,7 +66,6 @@ func main() {
 
 	log.Println("Connected to database successfully!")
 
-	// Set up API routes
 	r := mux.NewRouter()
 
 	r.Use(corsMiddleware)
