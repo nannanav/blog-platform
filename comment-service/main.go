@@ -66,6 +66,7 @@ func main() {
 	r.HandleFunc("/comments/{id:[0-9]+}", deleteComment).Methods("DELETE")
 	r.HandleFunc("/status", healthCheck).Methods("GET")
 	r.HandleFunc("/mystatus", healthCheck).Methods("GET")
+	r.HandleFunc("/checkstatus", healthCheck).Methods("GET")
 
 	// Start server
 	port := getEnv("PORT", "8083")
